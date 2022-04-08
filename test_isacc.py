@@ -22,7 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 '''
 
-from datasets import CLEVRDataset
+from datasets import IssacDataset
 from networks import EmbeddingNet, ReadoutNet
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -47,14 +47,12 @@ if __name__ == '__main__':
     parser.add_argument('--n_relation', type=int, default=4)
     # Evaluation
     parser.add_argument('--checkpoint')
-    parser.add_argument('--batch_size', type=int, default=128)
-    parser.add_argument('--n_worker', type=int, default=2)
+    parser.add_argument('--batch_size', type=int, default=32)
+    parser.add_argument('--n_worker', type=int, default=1)
     args = parser.parse_args()
 
-    data = CLEVRDataset(
-        f'{args.data_dir}/{args.split}.h5',
-        f'{args.data_dir}/objects.h5',
-        args.max_nobj, rand_patch=False
+    data = IssacDataset(
+        args.data_dir
     )
     loader = DataLoader(data, args.batch_size, num_workers=args.n_worker)
 
@@ -72,12 +70,14 @@ if __name__ == '__main__':
 
     correct = 0
     total = 0
+
     for img, obj_patches, target, mask in tqdm(loader):
+        print('enter')
         img = img.cuda()
         obj_patches = obj_patches.cuda()
         with torch.no_grad():
             emb, attn = model(img, obj_patches)
-            # print(emb.shape) # [batch_size, max_nobj, width]
+            # print(emb.shape) # (20, 10, 768)
             logits = head(emb)
             pred = (logits > 0).int().cpu()
         target = target.int()
